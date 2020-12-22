@@ -11,8 +11,6 @@
 
 (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)
 
-(load-theme 'wombat)
-
 ;; Initialize package sources
 (require 'package)
 
@@ -73,7 +71,19 @@
   (ivy-rich-mode 1))
 
 (use-package doom-themes)
-(use-package all-the-icons)
+(load-theme 'doom-tomorrow-night t)
+
+(use-package all-the-icons
+  :if (display-graphic-p)
+  :commands all-the-icons-install-fonts
+  :init
+  (unless (find-font (font-spec :name "all-the-icons"))
+    (all-the-icons-install-fonts t)))
+
+(use-package all-the-icons-dired
+  :if (display-graphic-p)
+  :hook (dired-mode . all-the-icons-dired-mode))
+
 (use-package doom-modeline
   :ensure t
   :init (doom-modeline-mode 1))
@@ -96,3 +106,58 @@
   ([remap describe-command] . helpful-command)
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
+
+(use-package general
+  :config
+  (general-create-definer ammz/leader-keys
+			  :keymaps '(normal insert visual emacs)
+			  :prefix "SPC"
+			  :global-prefix "C-SPC")
+  (ammz/leader-keys
+   "t"  '(:ignore t :which-key "toggles")
+   "tt" '(counsel-load-theme :which-key "choose theme")))
+
+(defun ammz/evil-hook ()
+  (dolist (mode '(custom-mode
+		  eshell-mode
+		  git-rebase-mode
+		  erc-mode
+		  circe-serve-mode
+		  circe-chat-mode
+		  circe-query-mode
+		  sauron-mode
+		  term-mode))
+    (add-to-list 'evil-emacs-state-modes mode)))
+
+(use-package evil
+  :init
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding t)
+  (setq evil-want-C-u-scroll t)
+  (setq evil-want-C-i-jump t)
+  :hook (evil-mode . ammz/evil-hook)
+  :config
+  (evil-mode 1)
+  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
+  (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
+
+  ;; Use visual line motions even outside of visual-line-mode buffers
+  (evil-global-initial-state 'motion "j" 'evil-next-visual-line)
+  (evil-global-initial-state 'motion "k" 'evil-previous-visual-line)
+
+  (evil-set-initial-state 'messages-buffer-mode 'normal)
+  (evil-set-initial-state 'dashboard-mode 'normal))
+ 
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init t))
+
+(use-package hydra)
+
+(defhydra hydra-text-scale (:timeout 4)
+  "scale text"
+  ("j" text-scale-increase "in")
+  ("k" text-scale-decrease "out")
+  ("f" nil "finished" :exit t))
+
